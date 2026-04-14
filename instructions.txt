@@ -1,0 +1,81 @@
+Step 1: Stress Test with Diverse Profiles
+
+Open src/main.py.
+Define at least three distinct user preference dictionaries (e.g., "High-Energy Pop," "Chill Lofi," "Deep Intense Rock").
+Open a New Chat Session for "System Evaluation." Use the #codebase context to ask Copilot to suggest "adversarial" or "edge case" user profiles—profiles designed to see if your scoring logic can be "tricked" or if it produces unexpected results (e.g., a user with conflicting preferences like energy: 0.9 and mood: sad).
+Run your recommender for each profile and observe the top 5 results in your terminal.
+Take a screenshot of your terminal output for each profile's recommendations and include all screenshots in your README.md.
+Step 2: Look for Accuracy and Surprises
+
+
+Compare the recommendations for at least one profile to your own musical intuition. Do the results "feel" right?
+
+
+Use Inline Chat on a specific result in your terminal (or the corresponding code in main.py). Formulate a prompt asking Copilot to explain why a specific song ranked first based on your current weights in recommender.py.
+
+If the same song keeps appearing at the top of every list, your "Genre" weight might be too strong, or your dataset might be too small to provide variety.
+Step 3: Run a Small Data Experiment
+
+Choose one change to test your system's sensitivity:
+Weight Shift: Double the importance of energy and half the importance of genre.
+Feature Removal: Temporarily comment out the mood check to see how the rankings change.
+Use Agent Mode to quickly apply one of these experimental changes across recommender.py. In your prompt, describe the specific logic change you want to see and ask the Agent to verify that the math remains valid.
+Run your main.py again. Note whether the change made the recommendations more accurate or just different.
+Step 4: Identify Bias and Limitations
+
+Use the Chat View with #file:recommender.py and #file:songs.csv. Ask Copilot to identify potential "filter bubbles" or biases in your current scoring logic. For example, does your system ignore certain types of users because of how you calculate the "energy gap"?
+Open model_card.md.
+In the Limitations and Bias section, write 3–5 sentences describing one weakness you discovered during your experiments (e.g., "The system over-prioritizes pop because 60% of the dataset is pop music").
+Step 5: Document Your Evaluation
+
+
+Update the Evaluation section of your model_card.md.
+
+
+Describe which user profiles you tested and what surprised you about the results.
+
+
+For each pair of profiles, write at least one comment in your reflection.md file comparing the differences between their outputs — what changed, and why does it make sense? For example: "EDM profile prefers high energy songs; acoustic profile shifts toward low energy guitars." This helps demonstrate that you understand what your user preferences are actually testing for and whether the output is valid.
+
+Use plain language. Imagine you are explaining to a non-programmer why the "Gym Hero" song keeps showing up for people who just want "Happy Pop."
+📍Checkpoint: You have tested your recommender with multiple diverse profiles, run at least one logic experiment, and identified a clear limitation or bias. You have documented these findings in your model_card.md.
+
+Step 1: Fill Out the Model Card Template
+
+Complete each section of the model_card.md file in your project repo. Use short, simple sentences! This is meant to be clear, not formal.
+Model Card Sections
+Model Name: Choose something fun but descriptive (e.g., "VibeFinder 1.0").
+Goal / Task: Explain what your recommender tries to predict or suggest.
+Data Used: Describe your dataset size, features, and any limits.
+Algorithm Summary: Explain your scoring rules in plain language (not code).
+Observed Behavior / Biases: Describe at least one pattern, limitation, or imbalance.
+Evaluation Process: Summarize how you tested your system (profiles, experiments, comparisons).
+Intended Use and Non-Intended Use: Clarify what your system is designed for and what it shouldn't be used for.
+Ideas for Improvement: List 2-3 things you'd change if you kept developing this.
+Step 2: Write a Personal Reflection
+
+In the final section of your Model Card (or the README.md), write a personal reflection on your engineering process.
+What was your biggest learning moment during this project?
+How did using AI tools help you, and when did you need to double-check them?
+What surprised you about how simple algorithms can still "feel" like recommendations?
+What would you try next if you extended this project?
+📍Checkpoint: You've created a complete Model Card documenting how your recommender works, identified key limitations and biases, and written a thoughtful reflection on what you learned and how AI shaped your process.
+
+Optional Extensions
+⏰ ~30 mins
+
+These add-ons are completely optional if you want to deepen or personalize your recommender. Pick one or try them all!
+
+Challenge 1: Add Advanced Song Features with Agent Mode
+Introduce 5 or more complex attributes to your dataset that are not currently present in the baseline data, such as Song Popularity (0-100), Release Decade, or Detailed Mood Tags (e.g., "nostalgic," "aggressive," "euphoric").
+Use Agent Mode to modify both data/songs.csv and the scoring logic in src/recommender.py.
+Ensure your prompt instructs the Agent to create specific math-based scoring rules for these new features -- for example, rewarding specific mood tags or prioritizing tracks from a certain era of music.
+Challenge 2: Create Multiple Scoring Modes
+Build two or more different ranking strategies (e.g., "Genre-First," "Mood-First," or "Energy-Focused").
+Use Copilot Chat with #file:recommender.py to brainstorm how to structure your code so a user can switch between these modes in main.py. Ask the AI for a design pattern (like a simple "Strategy" pattern) that keeps your code modular.
+Challenge 3: Diversity and Fairness Logic
+Implement a "Diversity Penalty" that prevents the recommender from suggesting too many songs from the same artist or genre in the top results.
+Formulate a prompt for Inline Chat that describes a rule to penalize a song's score if its artist is already present in the top recommendations list.
+Challenge 4: Visual Summary Table
+Improve the readability of your terminal output by providing a formatted table or summary.
+Ask Copilot to suggest a way to use a library like tabulate or simple ASCII formatting to display your top recommendations. Ensure your prompt specifies that the table must include the "reasons" for each score.

@@ -2,6 +2,8 @@
 
 ## Project Summary
 
+VibeFinder 2.0 is a content-based music recommender simulation. It scores every song in an 18-song catalog against a user's explicit taste profile (genre, mood, energy, tempo, acousticness, and five extended attributes) and returns the top-5 matches with plain-English explanations. The system supports four swappable scoring modes and an artist-diversity penalty. Built for CodePath AI-110 Module 3 to demonstrate how simple weighted scoring can feel like real recommendation.
+
 ## How The System Works
 
 Real-world music recommenders like Spotify or YouTube Music build a model of your taste by analyzing everything you listen to — how long you play a track, whether you skip it, what you replay — and then find patterns across millions of users to surface songs you have never heard but are likely to enjoy. They combine collaborative filtering (people like you also liked this) with content-based signals (this song sounds like ones you already love). This simulation focuses entirely on the content-based side: it compares each song's measurable attributes against a user's stated taste profile and assigns a composite score, then returns the top matches. Rather than learning from implicit listening behavior, it prioritizes explicit signals — genre alignment, mood match, energy proximity, and acoustic character — to produce ranked recommendations with plain-language explanations.
@@ -10,7 +12,7 @@ Real-world music recommenders like Spotify or YouTube Music build a model of you
 
 ### Features
 
-**Song object fields:**
+**Song object fields (15 total):**
 
 | Field | Type | What it captures |
 |---|---|---|
@@ -21,6 +23,11 @@ Real-world music recommenders like Spotify or YouTube Music build a model of you
 | `valence` | float 0–1 | Musical positivity; high = upbeat, low = somber |
 | `danceability` | float 0–1 | How suited the track is for dancing |
 | `acousticness` | float 0–1 | How acoustic vs. electronic the production is |
+| `popularity` | int 0–100 | Chart popularity score *(added Phase 4)* |
+| `release_decade` | int | Decade of release — e.g., 2000, 2010, 2020 *(added Phase 4)* |
+| `mood_tag` | string | Detailed mood label (e.g., "euphoric", "melancholic", "serene") *(added Phase 4)* |
+| `instrumentalness` | float 0–1 | Fraction of the track that is instrumental vs. vocal *(added Phase 4)* |
+| `speechiness` | float 0–1 | Fraction of spoken-word / rap content *(added Phase 4)* |
 
 **UserProfile / taste profile fields:**
 
@@ -158,18 +165,53 @@ This system has several predictable biases built directly into its design. Being
 
 ---
 
-## Sample Terminal Output
+## Sample Terminal Output — Profile Screenshots
 
-Running `python -m src.main` from the project root produces the following output.
-Two profiles are shown back-to-back: the default **pop / happy** verification profile and the primary **r&b / sad** profile.
+### Profile 1 — High-Energy Pop
+![alt text](image-1.png)
 
-![alt text](image.png)
+### Profile 2 — Chill Lofi
+![alt text](image-2.png)
 
-**Verification notes — pop / happy profile:**
-- `#1 Sunrise City` hits both genre (`pop`) and mood (`happy`) for +5.0 pts, and its energy/valence/tempo are all within a tiny gap of the target — score 8.93 ✅
-- `#2 Gym Hero` wins the genre match (+3.0) but loses the mood (`intense` ≠ `happy`) — it drops to 6.77, correctly ranked below Sunrise City ✅
-- `#3 Rooftop Lights` wins the mood (`happy`) but loses the genre (`indie pop` ≠ `pop`) — 5.92, confirming genre outweighs mood as designed ✅
-- `#4` and `#5` miss both genre and mood, surviving only on numeric proximity — correctly at the bottom ✅
+### Profile 3 — Deep Intense Rock
+![alt text](image-3.png)
+
+### Profile 4 — Adversarial: High Energy + Sad Mood
+![alt text](image-4.png)
+
+### Profile 5 — Adversarial: Ultra-Niche Classical
+![alt text](image-5.png)
+
+---
+
+## User Profile Comparison Comments
+
+| Comparison | Observation |
+|---|---|
+| Profile 1 (High-Energy Pop) vs Profile 2 (Chill Lofi) | The EDM/pop profile floats high-energy songs (energy 0.85+) to the top; the lofi profile shifts entirely toward low-energy, high-acousticness tracks (energy 0.35–0.42). Even when two songs share a genre, the energy gap alone is enough to flip their rankings. This makes sense: energy is a direct proxy for "workout" vs "study" listening mode. |
+| Profile 3 (Deep Rock) vs Profile 1 (High-Energy Pop) | Both profiles want high energy, so their #4 and #5 picks converge on the same non-genre songs (City Grid, Carnival Lights). But #1–#3 diverge sharply: rock fans get Storm Runner and Shadow Protocol (intense, guitar-driven) while pop fans get Sunrise City and Gym Hero. Genre dominance is clearly visible — same energy preference, totally different top results. |
+| Profile 4 (Adversarial: High Energy + Sad) vs Profile 2 (Chill Lofi) | The adversarial profile exposes the biggest flaw: a high-energy sad song doesn't exist in the catalog. Broken Clocks (r&b/sad) scores correctly on genre+mood but loses heavily on energy gap. The chill profile, by contrast, finds three perfect matches in the catalog because the lofi genre is well-represented. Small catalogs punish niche tastes. |
+| Profile 5 (Classical) vs Profile 3 (Deep Rock) | Classical gets one clean match (Inner Peace) then falls off a cliff — ranks 2–5 are unrelated genres padded purely by numeric similarity. Rock finds three strong-ish matches. This comparison makes the catalog bias concrete: genres with more songs (lofi: 3, rock: 2) give users more meaningful variety in their top-5 than genres with only one song (classical: 1). |
+
+---
+
+## Experiments Performed
+
+### Experiment 1: Weight Shift — Scoring Mode Comparison (Phase 4, Step 3)
+
+![alt text](image-6.png)
+
+The key finding: switching from **balanced** to **genre-first** keeps Sunrise City at #1 but swaps Gym Hero (#2 balanced) and Rooftop Lights (#3 balanced) because genre-first penalises the genre mismatch on Rooftop Lights more heavily. Switching to **energy-focused** (energy weight = 5.0, double the balanced 2.0) brings City Grid and Carnival Lights higher because they match energy almost perfectly, even though they miss genre entirely. This confirms that **doubling the energy weight is enough to overpower a full genre match** in some cases.
+
+### Experiment 2: Adversarial Profile — Conflicting High Energy + Sad Mood (Phase 4, Step 2)
+
+The adversarial profile (r&b / sad / energy 0.90) was designed to "trick" the system by requesting contradictory attributes. The result was revealing: in **balanced** mode, Broken Clocks still ranks #1 because the genre+mood bonus (5 pts) outweighs the large energy penalty. But in **energy-focused** mode (energy weight = 5.0), Broken Clocks only earns 2.90 energy pts (from gap 0.42) while City Grid earns the full 5.0 energy pts — so the ranking flips and a non-r&b, non-sad song beats the "correct" answer. This demonstrates that extreme weight shifts can produce nonsensical recommendations.
+
+### Experiment 3: Diversity Penalty (Challenge 3)
+
+![alt text](image-7.png)
+
+With two LoRoom songs in the catalog (Midnight Coding and Focus Flow), the chill lofi profile would rank both in the top 5 under standard mode. The diversity penalty (−1.5 pts per artist repeat) penalises the second LoRoom song, pulling it down and surfacing Library Rain instead, which provides a different artist (Paper Lanterns) at nearly the same quality. The recommendations remain good while becoming less repetitive.
 
 ---
 
@@ -183,171 +225,52 @@ Two profiles are shown back-to-back: the default **pop / happy** verification pr
    python -m venv .venv
    source .venv/bin/activate      # Mac or Linux
    .venv\Scripts\activate         # Windows
+   ```
 
 2. Install dependencies
 
-```bash
-pip install -r requirements.txt
-```
+   ```bash
+   pip install -r requirements.txt
+   ```
 
 3. Run the app:
 
-```bash
-python -m src.main
-```
+   ```bash
+   python -m src.main
+   ```
+
+4. Run individual profiles for screenshots:
+
+   ```bash
+   python run_profiles.py [1-7]
+   ```
 
 ### Running Tests
 
-Run the starter tests with:
-
 ```bash
-pytest
+python -m pytest tests/
 ```
-
-You can add more tests in `tests/test_recommender.py`.
-
----
-
-## Experiments You Tried
-
-Use this section to document the experiments you ran. For example:
-
-- What happened when you changed the weight on genre from 2.0 to 0.5
-- What happened when you added tempo or valence to the score
-- How did your system behave for different types of users
 
 ---
 
 ## Limitations and Risks
 
-Summarize some limitations of your recommender.
+- **18-song catalog** — too small for meaningful variety; niche genres get only 1 match
+- **Binary mood matching** — "melancholic" and "sad" are treated as completely unrelated
+- **No lyric or language awareness** — two songs with identical attributes but different languages score the same
+- **Genre over-prioritization** — 3/10 points on a binary label; all-or-nothing for the biggest signal
+- **No learning** — the system cannot improve based on whether users actually liked the suggestions
 
-Examples:
-
-- It only works on a tiny catalog
-- It does not understand lyrics or language
-- It might over favor one genre or mood
-
-You will go deeper on this in your model card.
+See `model_card.md` for deeper analysis.
 
 ---
 
 ## Reflection
 
-Read and complete `model_card.md`:
+Recommenders look intelligent from the outside — Spotify always seems to know what you want — but under the hood they are scoring machines applying explicit rules to measurable features. Building VibeFinder made that concrete. The "intelligence" comes entirely from two design choices: which features to measure, and how much weight each gets. Both choices encode human assumptions about what music listeners care about. When those assumptions are wrong (like assuming sad mood implies low energy), the system produces technically correct output that no real listener would want.
 
-[**Model Card**](model_card.md)
+The place where human judgment still matters most is in evaluating whether the results feel right. Every test I ran could pass all automated checks while surfacing recommendations that were obviously off. Automated tests verify the math; only a person with musical taste can verify the usefulness. That gap between correctness and usefulness is where real AI product work lives.
 
-Write 1 to 2 paragraphs here about what you learned:
-
-- about how recommenders turn data into predictions
-- about where bias or unfairness could show up in systems like this
-
+[**Full Model Card**](model_card.md)
 
 ---
-
-## 7. `model_card_template.md`
-
-Combines reflection and model card framing from the Module 3 guidance. :contentReference[oaicite:2]{index=2}  
-
-```markdown
-# 🎧 Model Card - Music Recommender Simulation
-
-## 1. Model Name
-
-Give your recommender a name, for example:
-
-> VibeFinder 1.0
-
----
-
-## 2. Intended Use
-
-- What is this system trying to do
-- Who is it for
-
-Example:
-
-> This model suggests 3 to 5 songs from a small catalog based on a user's preferred genre, mood, and energy level. It is for classroom exploration only, not for real users.
-
----
-
-## 3. How It Works (Short Explanation)
-
-Describe your scoring logic in plain language.
-
-- What features of each song does it consider
-- What information about the user does it use
-- How does it turn those into a number
-
-Try to avoid code in this section, treat it like an explanation to a non programmer.
-
----
-
-## 4. Data
-
-Describe your dataset.
-
-- How many songs are in `data/songs.csv`
-- Did you add or remove any songs
-- What kinds of genres or moods are represented
-- Whose taste does this data mostly reflect
-
----
-
-## 5. Strengths
-
-Where does your recommender work well
-
-You can think about:
-- Situations where the top results "felt right"
-- Particular user profiles it served well
-- Simplicity or transparency benefits
-
----
-
-## 6. Limitations and Bias
-
-Where does your recommender struggle
-
-Some prompts:
-- Does it ignore some genres or moods
-- Does it treat all users as if they have the same taste shape
-- Is it biased toward high energy or one genre by default
-- How could this be unfair if used in a real product
-
----
-
-## 7. Evaluation
-
-How did you check your system
-
-Examples:
-- You tried multiple user profiles and wrote down whether the results matched your expectations
-- You compared your simulation to what a real app like Spotify or YouTube tends to recommend
-- You wrote tests for your scoring logic
-
-You do not need a numeric metric, but if you used one, explain what it measures.
-
----
-
-## 8. Future Work
-
-If you had more time, how would you improve this recommender
-
-Examples:
-
-- Add support for multiple users and "group vibe" recommendations
-- Balance diversity of songs instead of always picking the closest match
-- Use more features, like tempo ranges or lyric themes
-
----
-
-## 9. Personal Reflection
-
-A few sentences about what you learned:
-
-- What surprised you about how your system behaved
-- How did building this change how you think about real music recommenders
-- Where do you think human judgment still matters, even if the model seems "smart"
-
